@@ -1,2 +1,1 @@
-# controller
-Learning hexi
+# Node-Hexi
