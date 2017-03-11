@@ -20,57 +20,16 @@ function load(){
     g.loadingBar()
 }
 
-var circs
-
 function setup(){
-
-    circs = g.group()
 
     g.state = play
 }
 
-g.pointer.tap = () => {
+g.pointer.tap = function() {
 
-    makeCirc(g.pointer.x, g.pointer.y)
 }
 
-let randCol = () => {
-    let hex = '#'
-
-    for(var i = 0; i < 6; i++){
-        hex += g.randomInt(0, 8)
-    }
-
-    return hex
-}
-
-let makeCirc = (x, y) => {
-
-    let circ = g.circle(
-        g.randomInt(15, 35),
-        randCol()
-    )
-
-    circ.setPosition(x, y)
-
-    circ.setPivot(1, 1)
-
-    g.breathe(circ, 2, 2, 20)
-
-    circ.vx = g.randomInt(-10, 10)
-    circ.vy = g.randomInt(-10, 10)
-
-    circs.addChild(circ)
-}
 
 function play() {
-
-    circs.children.forEach(circ => {
-
-        let col = g.contain(circ, g.stage, true)
-
-        circ.rotation += 0.2
-        g.move(circ)
-    })
 
 }
