@@ -1,12 +1,12 @@
 {
-  "name": "controller",
+  "name": "MobiPad",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js"
   },
-  "author": "",
+  "author": "Poliky",
   "license": "ISC",
   "dependencies": {
     "express": "^4.14.1",
