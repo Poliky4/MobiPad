@@ -15,100 +15,131 @@ var socket = io()
 // Global variables
 let stick, stickCenter, btnCenter, btnA, btnX, btnY, btnB
 let buttons
-let size = _WIDTH * 0.15 // 75
+let size = _WIDTH * 0.12 // 75
 let stickSize = _WIDTH * 0.35 // 250
+var stickJob    
+
+let btnStart
+let buttonCenterPlaceHolder
+
+let midline
+
+let defaultButton = {}
+// size, color, lineColor, lineWidth, x, y
 
 // -------------
     g.start()
 // -------------
 
+function sendStick(){
+
+    let forceX = g.pointer.x - stick.x - stick.halfWidth
+    let forceY = g.pointer.y - stick.y - stick.halfHeight
+
+    //console.log('stickOffset: ', forceX, forceY)
+
+    socket.emit('stick', {x:forceX, y:forceY})
+}
+
 function setup(){
+
+    stick = g.circle(stickSize, 'grey', 'black', 0, 20, _HEIGHT/2 - stickSize/2)
+    g.makeInteractive(stick)
+
+    // stickCenter = g.circle(stickSize/3, 'darkgrey', 'black', 2, stick.x, stick.y)
+    // stickCenter.setPivot(0.5, 0.5)
+    // stick.putCenter(stickCenter)
+
+
+// ------------
 
     buttons = g.group()
 
-    buttonCenter = g.circle(size, 'grey', 'black', 0, _WIDTH - size * 2, _HEIGHT / 2 - size / 2)
+    buttonCenter = g.circle(size/2, 'grey', 'black', 0, _WIDTH - size * 2, _HEIGHT / 2 - size / 2)
+    buttonCenterPlaceHolder = g.circle(size/2, 'grey', 'black', 0, _WIDTH - size * 2, _HEIGHT / 2 - size / 2)
 
-    stick = g.circle(stickSize, 'grey', 'black', 2, 20, _HEIGHT/2 - stickSize/2)
-    stick.setPivot(0.5, 0.5)
+    btnA = makeButton(size, 'green', 'black', 3, buttonCenter.x, buttonCenter.y, 'A')
+    btnA.tap = () => {
 
-    stickCenter = g.circle(stickSize/2, 'darkgrey', 'black', 2, stick.x + stickSize/4, stick.y + stickSize/4)
-    stickCenter.setPivot(0.5, 0.5)
-
-    stick.interact = true
-    stick.press = function(){
-
-        console.log('stick!')
-
-        let stickX = g.pointer._x,
-            stickY = g.pointer._y
-
-        console.log('click: ', stickX, ',', stickY)
-        console.log('stick: ', stick.x + stick.width/2, stick.y + stick.height/2)
-
-        let angleFromCenter = g.angle(stick, g.pointer)
-        let distFromCenter = g.distance(stick, g.pointer)
-
-        console.log('angleFromCenter: ', angleFromCenter)
-        console.log('distFromCenter: ', distFromCenter)
-
-        stickCenter.x = stickX
-        stickCenter.y = stickY
-
-        socket.emit('stick', {angle: angleFromCenter, distance: distFromCenter})
-    }
-
-    let btnOffset = (size/3)*2
-
-    btnA = makeButton(size, 'green', 'black', 2, buttonCenter.x + btnOffset, buttonCenter.y)
-    btnA.setPivot(0.5, 0.5)
-    btnA.interact = true
-    btnA.press = function(){
-
-        console.log('A!')
-
+        console.log(btnA)
         socket.emit('a')
     }
 
-    btnX = makeButton(size, 'blue', 'black', 2, buttonCenter.x, buttonCenter.y - btnOffset)
-    btnX.setPivot(0.5, 0.5)
-    btnX.interact = true
-    btnX.press = function(){
+    btnX = makeButton(size, 'blue', 'black', 3, buttonCenter.x, buttonCenter.y, 'X')
+    btnX.tap = () => {
 
-        console.log('X!')
-
+        console.log(btnA)
         socket.emit('x')
     }
 
-    btnY = makeButton(size, 'yellow', 'black', 2, buttonCenter.x - btnOffset, buttonCenter.y)
-    btnY.setPivot(0.5, 0.5)
-    btnY.interact = true
-    btnY.press = function(){
+    btnY = makeButton(size, 'yellow', 'black', 3, buttonCenter.x, buttonCenter.y, 'Y')
+    btnY.tap = () => {
 
-        console.log('Y!')
-
+        console.log(btnA)
         socket.emit('y')
     }
 
-    btnB = makeButton(size, 'red', 'black', 2, buttonCenter.x, buttonCenter.y + btnOffset)
-    btnB.setPivot(0.5, 0.5)
-    btnB.interact = true
-    btnB.press = function(){
+    btnB = makeButton(size, 'red', 'black', 3, buttonCenter.x, buttonCenter.y, 'B')
+    btnB.tap = () => {
 
-        console.log('B!')
-
+        console.log(btnA)
         socket.emit('b')
     }
+
+    // --------------
+
+    let optBtn = {
+        x: 0,
+        y: 0,
+        width: _WIDTH * 0.14,
+        height: _WIDTH * 0.07,
+        color: 'darkgrey',
+        lineColor: 'black',
+        lineWidth: 3,
+    }
+
+    btnStart = g.rectangle(optBtn.width, optBtn.height, optBtn.color, optBtn.lineColor, optBtn.lineWidth, (_WIDTH/2) - (optBtn.width/2), _HEIGHT - optBtn.height)
+    btnStartText = g.text('START', '24px puzzler', 'black', btnStart.x, btnStart.y)
+    btnStart.putCenter(btnStartText)
+    g.makeInteractive(btnStart)
+    btnStart.tap = () => {
+
+        stick.draggable = !stick.draggable
+        buttonCenter.draggable = !buttonCenter.draggable
+        
+        if(g.hit(buttonCenter, buttonCenterPlaceHolder))
+            buttonCenterPlaceHolder.putCenter(buttonCenter)
+
+        socket.emit('start')
+    }
+
+    //midline = g.rectangle(2, _HEIGHT, 'black', 0, 0, _WIDTH/2, 0)
+
+    // --------------
+
+    moveButtons()
 
     socket.emit('makeConnection', 'client')
     
     g.state = play
+
+    //setInterval(clientSync, 250)
 }
+
+
 
 socket.on('sync', (data) => {
 
     console.log('sync')
     console.log(data)
 })
+
+function clientSync(){
+
+    let data = {}
+
+    socket.emit('clientSync', data)
+}
 
 function load(){
 
@@ -121,23 +152,59 @@ function load(){
     g.loadingBar()
 }
 
-function makeButton(size, color, lineColor, lineWidth, x, y){
+function makeButton(size, color, lineColor, lineWidth, x, y, text){
 
-    let defaultButton = {
-        size, 
-    }
-
-    let btn = g.circle(size, color, lineColor, lineWidth, x, y)
+    let btn = g.circle(size, color, lineColor, /*lineWidth*/0, x, y)
+    btn.text = g.text(text, '48px puzzler', 'black')
+    btn.setPivot(0.5, 0.5)
+    g.makeInteractive(btn)
 
     return btn
 }
 
+function checkStick(){
+    if(stick.pressed){
+        
+        let stickX = g.pointer._x,
+            stickY = g.pointer._y
+        
+        // stickCenter.x = stickX
+        // stickCenter.y = stickY
+
+        if(!stickJob){
+            stickJob = setInterval(sendStick, 100)
+        }        
+    } else {
+
+        // stick.putCenter(stickCenter)
+
+        if(stickJob){
+            console.log(btnA)
+            clearInterval(stickJob)
+            stickJob = undefined
+            socket.emit('stick', {x:0, y:0})
+        }
+    }
+}
+
+function moveButtons(){
+
+    let btnOffset = 0//size/4
+
+    buttonCenter.putBottom(btnA, 0, -btnOffset)
+    btnA.putCenter(btnA.text)
+    buttonCenter.putLeft(btnX, btnOffset)
+    btnX.putCenter(btnX.text)
+    buttonCenter.putTop(btnY, 0, btnOffset)
+    btnY.putCenter(btnY.text)
+    buttonCenter.putRight(btnB, -btnOffset)
+    btnB.putCenter(btnB.text)
+}
+
 function play() {
 
-    g.contain(stickCenter, stick)
+    checkStick()
 
-    if(!stick.pressed){
-        stickCenter.x = stick.halfWidth + stickCenter.halfWidth/2
-        stickCenter.y = stick.halfHeight + stickCenter.halfHeight/2
-    }
+    moveButtons()
+
 }

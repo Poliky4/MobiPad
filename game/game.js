@@ -13,10 +13,13 @@ g.fps = _FPS
 var socket = io()
 
 // globals
-let balls, bigBall
+let balls = [], bigBall, ball
 let speedX = 5,
     speedY = 5
 let size = 50
+let ballLifeTimeMS = 5000
+
+let paused = false
 
 // -------------
     g.start()
@@ -24,9 +27,10 @@ let size = 50
 
 function setup(){
 
-    balls = g.group()
+    //balls = g.group()
 
-    bigBall = makeBall(size * 2, "red", "black", 2,_WIDTH/2, _HEIGHT/2 )
+    bigBall = g.circle(size * 3, "red", "black", 2,_WIDTH/2, _HEIGHT/2 )
+    bigBall.mass = 10
 
     socket.emit('makeConnection', 'host')
 
@@ -35,60 +39,68 @@ function setup(){
 
 // -------------
 
+socket.on('start', () => {
+    if(paused){
+        g.resume()
+        paused = false
+    } else {
+        g.pause()
+        paused = true
+    }
+})
+
 socket.on('stick', (data)=>{
     
-    console.log('stick')
-    console.log(data)
+    //console.log('stick')
+    //console.log(data)
+
+    bigBall.vx = data.x * 0.2
+    bigBall.vy = data.y * 0.2
 })
 
 socket.on('a', ()=>{
 
-    console.log('a')
-
-    let ball = makeBall(size, 'green', 'black', 2, _WIDTH/2, _HEIGHT/2)
-    balls.addChild(ball)
+    makeBall(size, 'green', 'black', 2, _WIDTH/2, _HEIGHT/2)
+    makeBall(size, 'green', 'black', 2, _WIDTH/2, _HEIGHT/2)
+    makeBall(size, 'green', 'black', 2, _WIDTH/2, _HEIGHT/2)
 })
 
 socket.on('x', ()=>{
 
-    console.log('x')
-
-    let ball = makeBall(size, 'blue', 'black', 2, _WIDTH/2, _HEIGHT/2)
-    balls.addChild(ball)
+    makeBall(size, 'blue', 'black', 2, _WIDTH/2, _HEIGHT/2)
+    makeBall(size, 'blue', 'black', 2, _WIDTH/2, _HEIGHT/2)
+    makeBall(size, 'blue', 'black', 2, _WIDTH/2, _HEIGHT/2)
 })
 
 socket.on('y', ()=>{
 
-    console.log('y')
-
-    let ball = makeBall(size, 'yellow', 'black', 2, _WIDTH/2, _HEIGHT/2)
-    balls.addChild(ball)
+    makeBall(size, 'yellow', 'black', 2, _WIDTH/2, _HEIGHT/2)
+    makeBall(size, 'yellow', 'black', 2, _WIDTH/2, _HEIGHT/2)
+    makeBall(size, 'yellow', 'black', 2, _WIDTH/2, _HEIGHT/2)
 })
 
 socket.on('b', ()=>{
 
-    console.log('b')
-
-    let ball = makeBall(size, 'red', 'black', 2, _WIDTH/2, _HEIGHT/2)
-    balls.addChild(ball)
+    makeBall(size, 'red', 'black', 2, _WIDTH/2, _HEIGHT/2)
+    makeBall(size, 'red', 'black', 2, _WIDTH/2, _HEIGHT/2)
+    makeBall(size, 'red', 'black', 2, _WIDTH/2, _HEIGHT/2)
 })
 
 function makeBall(size, color, lineColor, lineWidth, x, y){
 
-    let ball = g.circle(size, color, lineColor, lineWidth, x, y)
-
-    ball.vx = speedX
-    ball.vy = speedY
+    var ball = g.circle(size, color, lineColor, lineWidth, x, y)
 
     ball.mass = 1
 
-    setTimeout(function(){
+    let angle = 4.7
 
-        //g.remove(ball)
+    g.shoot(bigBall, angle, bigBall.halfWidth, -100, g.stage, 7, balls, () => ball)
 
-    }, 2500)
+    setTimeout(()=>{
 
-    return ball
+        //g.remove(balls.splice(balls.indexOf(ball), 1)[0])
+
+    }, ballLifeTimeMS)
 }
 
 function load(){
@@ -104,20 +116,22 @@ function load(){
 
 function play() {
 
-    g.multipleCircleCollision(balls.children)
+    g.multipleCircleCollision(balls)
 
-    balls.children.forEach(ball => {
+    for(let i in balls){
+        let ball = balls[i]
 
         g.contain(ball, g.stage, true)
 
-        if(g.hit(ball, bigBall)){
-            g.movingCircleCollision(ball, bigBall)
-        }
 
         g.move(ball)
-    })
+        if(g.hit(ball, bigBall)){
+            g.remove(balls.splice(balls.indexOf(ball), 1)[0])
+            //g.circleCollision(ball, bigBall, true)
+        }
+    }
 
-    g.contain(bigBall, g.stage, true)
+    g.contain(bigBall, g.stage)
     g.move(bigBall)
 
 }

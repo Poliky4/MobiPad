@@ -22,8 +22,8 @@ io.on('connection', function(socket){
 
 		origin = $origin
 
-		if		(origin == 'host') 		hosts.push(socket)
-		else if	(origin == 'client')	clients.push(socket)		
+		if	(origin == 'host') 		hosts.push(socket)
+		if	(origin == 'client')	clients.push(socket)
 
 		console.log('hosts: ' + hosts.length)
 		console.log('clients: ' + clients.length)
@@ -39,9 +39,15 @@ io.on('connection', function(socket){
 
 	})
 
-	socket.on('stick', (data)=>{
+	// socket.on('clientSync', data => {
 
-		console.log('stick')
+	// 	// will be *your* host and not all
+	// 	hosts.forEach(host=> {
+	// 		host.emit('stick', data)
+	// 	})
+	// })
+
+	socket.on('stick', (data)=>{
 
 		hosts.forEach(host=> {
 			host.emit('stick', data)
@@ -49,15 +55,11 @@ io.on('connection', function(socket){
 	})
 	socket.on('a', ()=>{
 
-		console.log('a')
-
 		hosts.forEach(host=> {
 			host.emit('a')
 		})
 	})
 	socket.on('x', ()=>{
-
-		console.log('x')
 
 		hosts.forEach(host=> {
 			host.emit('x')
@@ -65,18 +67,20 @@ io.on('connection', function(socket){
 	})
 	socket.on('y', ()=>{
 
-		console.log('y')
-
 		hosts.forEach(host=> {
 			host.emit('y')
 		})
 	})
 	socket.on('b', ()=>{
 
-		console.log('b')
-
 		hosts.forEach(host=> {
 			host.emit('b')
+		})
+	})
+	socket.on('start', ()=>{
+
+		hosts.forEach(host=> {
+			host.emit('start')
 		})
 	})
 
