@@ -94,6 +94,17 @@ function makeBall(size, color, lineColor, lineWidth, x, y){
 
     let angle = 4.7
 
+    console.log('angle')
+
+    let previousBigBall = bigBall
+    previousBigBall.x = bigBall._previousX
+    previousBigBall.y = bigBall._previousY
+
+    // console.log(previousBigBall)
+    console.log(g.angle(previousBigBall, bigBall))
+
+    console.log('angle')
+
     g.shoot(bigBall, angle, bigBall.halfWidth, -100, g.stage, 7, balls, () => ball)
 
     setTimeout(()=>{

@@ -20,7 +20,7 @@ let stickSize = _WIDTH * 0.35 // 250
 var stickJob    
 
 let btnStart
-let buttonCenterPlaceHolder
+let buttonCenterPlaceholder
 
 let midline
 
@@ -44,9 +44,11 @@ function sendStick(){
 function setup(){
 
     stick = g.circle(stickSize, 'grey', 'black', 0, 20, _HEIGHT/2 - stickSize/2)
+    // stickPlaceholder = g.circle(size/2, 'grey', 'black', 0, _WIDTH - size * 2, _HEIGHT / 2 - size / 4)
     g.makeInteractive(stick)
 
-    // stickCenter = g.circle(stickSize/3, 'darkgrey', 'black', 2, stick.x, stick.y)
+    // stickCenter = g.circle(stickSize/2.5, 'darkgrey', 'black', 2, stick.x, stick.y)
+    // stick.addChild(stickCenter)
     // stickCenter.setPivot(0.5, 0.5)
     // stick.putCenter(stickCenter)
 
@@ -55,8 +57,8 @@ function setup(){
 
     buttons = g.group()
 
-    buttonCenter = g.circle(size/2, 'grey', 'black', 0, _WIDTH - size * 2, _HEIGHT / 2 - size / 2)
-    buttonCenterPlaceHolder = g.circle(size/2, 'grey', 'black', 0, _WIDTH - size * 2, _HEIGHT / 2 - size / 2)
+    buttonCenter = g.circle(size/2, 'grey', 'black', 0, _WIDTH - size * 2, _HEIGHT / 2 - size / 4)
+    buttonCenterPlaceholder = g.circle(size/2, 'grey', 'black', 0, buttonCenter.x, buttonCenter.y)
 
     btnA = makeButton(size, 'green', 'black', 3, buttonCenter.x, buttonCenter.y, 'A')
     btnA.tap = () => {
@@ -107,8 +109,8 @@ function setup(){
         stick.draggable = !stick.draggable
         buttonCenter.draggable = !buttonCenter.draggable
         
-        if(g.hit(buttonCenter, buttonCenterPlaceHolder))
-            buttonCenterPlaceHolder.putCenter(buttonCenter)
+        if(g.hit(buttonCenter, buttonCenterPlaceholder))
+            buttonCenterPlaceholder.putCenter(buttonCenter)
 
         socket.emit('start')
     }
@@ -165,11 +167,8 @@ function makeButton(size, color, lineColor, lineWidth, x, y, text){
 function checkStick(){
     if(stick.pressed){
         
-        let stickX = g.pointer._x,
-            stickY = g.pointer._y
-        
-        // stickCenter.x = stickX
-        // stickCenter.y = stickY
+        // stickCenter.x = g.pointer._x,
+        // stickCenter.y = g.pointer._y
 
         if(!stickJob){
             stickJob = setInterval(sendStick, 100)
@@ -199,6 +198,8 @@ function moveButtons(){
     btnY.putCenter(btnY.text)
     buttonCenter.putRight(btnB, -btnOffset)
     btnB.putCenter(btnB.text)
+
+    //stick.putCenter(stickCenter)
 }
 
 function play() {
