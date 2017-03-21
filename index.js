@@ -47,34 +47,39 @@ io.on('connection', function(socket){
 	// 	})
 	// })
 
+	socket.on('hitBall', (ball) => {
+
+		console.log(ball)
+	})
+
 	socket.on('stick', (data)=>{
 
 		hosts.forEach(host=> {
 			host.emit('stick', data)
 		})
 	})
-	socket.on('a', ()=>{
+	socket.on('A', ()=>{
 
 		hosts.forEach(host=> {
-			host.emit('a')
+			host.emit('A')
 		})
 	})
-	socket.on('x', ()=>{
+	socket.on('X', ()=>{
 
 		hosts.forEach(host=> {
-			host.emit('x')
+			host.emit('X')
 		})
 	})
-	socket.on('y', ()=>{
+	socket.on('Y', ()=>{
 
 		hosts.forEach(host=> {
-			host.emit('y')
+			host.emit('Y')
 		})
 	})
-	socket.on('b', ()=>{
+	socket.on('B', ()=>{
 
 		hosts.forEach(host=> {
-			host.emit('b')
+			host.emit('B')
 		})
 	})
 	socket.on('start', ()=>{

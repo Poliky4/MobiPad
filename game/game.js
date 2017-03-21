@@ -29,8 +29,9 @@ function setup(){
 
     //balls = g.group()
 
-    bigBall = g.circle(size * 3, "red", "black", 2,_WIDTH/2, _HEIGHT/2 )
+    bigBall = g.circle(size * 2, "red", "black", 2,_WIDTH/2, _HEIGHT/2 )
     bigBall.mass = 10
+    bigBall.setPivot(0.5, 0.5)
 
     socket.emit('makeConnection', 'host')
 
@@ -56,30 +57,31 @@ socket.on('stick', (data)=>{
 
     bigBall.vx = data.x * 0.2
     bigBall.vy = data.y * 0.2
+
 })
 
-socket.on('a', ()=>{
+socket.on('A', ()=>{
 
     makeBall(size, 'green', 'black', 2, _WIDTH/2, _HEIGHT/2)
     makeBall(size, 'green', 'black', 2, _WIDTH/2, _HEIGHT/2)
     makeBall(size, 'green', 'black', 2, _WIDTH/2, _HEIGHT/2)
 })
 
-socket.on('x', ()=>{
+socket.on('X', ()=>{
 
     makeBall(size, 'blue', 'black', 2, _WIDTH/2, _HEIGHT/2)
     makeBall(size, 'blue', 'black', 2, _WIDTH/2, _HEIGHT/2)
     makeBall(size, 'blue', 'black', 2, _WIDTH/2, _HEIGHT/2)
 })
 
-socket.on('y', ()=>{
+socket.on('Y', ()=>{
 
     makeBall(size, 'yellow', 'black', 2, _WIDTH/2, _HEIGHT/2)
     makeBall(size, 'yellow', 'black', 2, _WIDTH/2, _HEIGHT/2)
     makeBall(size, 'yellow', 'black', 2, _WIDTH/2, _HEIGHT/2)
 })
 
-socket.on('b', ()=>{
+socket.on('B', ()=>{
 
     makeBall(size, 'red', 'black', 2, _WIDTH/2, _HEIGHT/2)
     makeBall(size, 'red', 'black', 2, _WIDTH/2, _HEIGHT/2)
@@ -91,27 +93,30 @@ function makeBall(size, color, lineColor, lineWidth, x, y){
     var ball = g.circle(size, color, lineColor, lineWidth, x, y)
 
     ball.mass = 1
+    ball.setPivot(0.5, 0.5)
 
-    let angle = 4.7
-
-    console.log('angle')
-
-    let previousBigBall = bigBall
-    previousBigBall.x = bigBall._previousX
-    previousBigBall.y = bigBall._previousY
-
-    // console.log(previousBigBall)
-    console.log(g.angle(previousBigBall, bigBall))
-
-    console.log('angle')
-
-    g.shoot(bigBall, angle, bigBall.halfWidth, -100, g.stage, 7, balls, () => ball)
+    g.shoot(bigBall, bigBall.rotation, bigBall.halfWidth, bigBall.halfHeight, g.stage, 7, balls, () => ball)
+    // g.shoot(bigBall, bigBall.rotation, bigBall.halfWidth, -100, g.stage, 7, balls, () => ball)
 
     setTimeout(()=>{
 
         //g.remove(balls.splice(balls.indexOf(ball), 1)[0])
 
     }, ballLifeTimeMS)
+}
+
+function getRotation(obj){
+        
+    let prevObj = {}
+
+    prevObj.x = obj._previousX
+    prevObj.y = obj._previousY
+    prevObj.height = obj.height
+    prevObj.width = obj.width
+    prevObj.anchor = obj.anchor
+    
+    return g.angle(prevObj, obj)
+
 }
 
 function load(){
@@ -138,11 +143,16 @@ function play() {
         g.move(ball)
         if(g.hit(ball, bigBall)){
             g.remove(balls.splice(balls.indexOf(ball), 1)[0])
-            //g.circleCollision(ball, bigBall, true)
+
         }
     }
 
     g.contain(bigBall, g.stage)
     g.move(bigBall)
 
+    let rotation = getRotation(bigBall)
+    if(rotation != 0)
+        bigBall.rotation = rotation
+
+    
 }
