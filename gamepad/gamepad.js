@@ -17,7 +17,7 @@ let stick, stickCenter, btnCenter, btnA, btnX, btnY, btnB
 let buttons
 let size = _WIDTH * 0.12 // 75
 let stickSize = _WIDTH * 0.35 // 250
-var stickJob    
+var stickJob
 
 let btnStart
 let buttonCenterPlaceholder
@@ -27,6 +27,14 @@ let midline
 // -------------
     g.start()
 // -------------
+
+connectOnEnter()
+
+socket.on('gamepadConnected', (data) => {
+
+    console.log('Connected!')
+    console.log(data)
+})
 
 function setup(){
 
@@ -73,7 +81,7 @@ function makeStartButton(){
         if(g.hit(buttonCenter, buttonCenterPlaceholder))
             buttonCenterPlaceholder.putCenter(buttonCenter)
 
-        socket.emit('start')
+        socket.emit('start', hostId)
     }
 
 }
@@ -109,6 +117,7 @@ function sendStick(){
     let forceX = g.pointer.x - stick.x - stick.halfWidth
     let forceY = g.pointer.y - stick.y - stick.halfHeight
 
+    console.log('stick')
     socket.emit('stick', {x:forceX, y:forceY})
 }
 

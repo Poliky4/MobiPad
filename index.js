@@ -12,95 +12,112 @@ app.use('/gamepad/', express.static('gamepad'))
 let hosts = [],
 	clients = []
 
+let hostIds = 0 
+
 io.on('connection', function(socket){
 
-	let origin
-	
-	console.log('Socket connected \t#' + socket.id)
+	// Connection events
 
+	let origin
 	socket.on('makeConnection', ($origin) =>{
 
 		origin = $origin
 
-		if	(origin == 'host') 		hosts.push(socket)
-		if	(origin == 'client')	clients.push(socket)
+		console.log('New', origin, '#' + socket.id)
 
-		console.log('hosts: ' + hosts.length)
-		console.log('clients: ' + clients.length)
+		if	(origin == 'host') {
+
+			socket.hostId = hostIds++
+			socket.gamepads = []
+			
+			socket.emit('hostId', socket.hostId)
+
+			hosts.push(socket)
+		}
+		else if	(origin == 'client'){
+			
+			clients.push(socket)
+		}
 	})
 
-	socket.on('sync', (indata) => {
-		let data = indata
-		console.log('sync: ', data)
+	socket.on('connectGamepad', (id) => {
 
-		hosts.forEach(host=> {
-			host.emit('sync', data)
-		})
+		console.log('Gamepad trying to connect')
 
+		let connected = false
+
+		hosts.forEach(host => {
+			if(host.hostId == id){
+
+				console.log('host found!')
+
+				if(host.gamepads.length < 4){
+
+					host.gamepads.push(socket)
+					socket.host = host
+
+					console.log('gamepad connected')
+
+					host.emit('gamepadConnected', {playerNumber:host.gamepads.length})
+					socket.emit('gamepadConnected', {playerNumber:host.gamepads.length})
+
+					connected = true
+				}
+			}
+		})		
+
+		socket.emit('gamepadConnected', connected)
 	})
 
-	// socket.on('clientSync', data => {
-
-	// 	// will be *your* host and not all
-	// 	hosts.forEach(host=> {
-	// 		host.emit('stick', data)
-	// 	})
-	// })
-
-	socket.on('hitBall', (ball) => {
-
-		console.log(ball)
-	})
+	// Gamepad events
 
 	socket.on('stick', (data)=>{
 
-		hosts.forEach(host=> {
-			host.emit('stick', data)
-		})
+		console.log('stick')
+		socket.host.emit('stick', data)
 	})
 	socket.on('A', ()=>{
 
-		hosts.forEach(host=> {
+		socket.gamepads.forEach(gamepad=> {
 			host.emit('A')
 		})
 	})
 	socket.on('X', ()=>{
 
-		hosts.forEach(host=> {
+		socket.gamepads.forEach(gamepad=> {
 			host.emit('X')
 		})
 	})
 	socket.on('Y', ()=>{
 
-		hosts.forEach(host=> {
+		socket.gamepads.forEach(gamepad=> {
 			host.emit('Y')
 		})
 	})
 	socket.on('B', ()=>{
 
-		hosts.forEach(host=> {
+		socket.gamepads.forEach(gamepad=> {
 			host.emit('B')
 		})
 	})
 	socket.on('start', ()=>{
 
-		hosts.forEach(host=> {
+		socket.gamepads.forEach(gamepad=> {
 			host.emit('start')
 		})
 	})
 
+	// Gamepad events
+
 	socket.on('disconnect', function(){
 			
-		console.log('Socket disconnected \t#' + socket.id)
+		console.log(origin, '#' + socket.id, 'disconnected')
 		if(origin == 'host'){
 			hosts.splice(hosts.indexOf(socket), 1)
 		}
 		else if(origin == 'client'){
 			clients.splice(hosts.indexOf(socket), 1)
 		}
-
-		console.log('hosts: ' + hosts.length)
-		console.log('clients: ' + clients.length)
 	})
 })
 
@@ -108,3 +125,24 @@ io.on('connection', function(socket){
 http.listen(PORT, function () {
 	console.log('MobiPad started on localhost:' + PORT + ' at: '+ new Date().toTimeString())
 })
+
+function sendToGamepads(host, event, data){
+	host.gamepads.forEach(gamepad => {
+		gamepad.emit(event, data)
+	})
+}
+
+function sendToHost(host, event, data){
+	
+	try{
+		
+		host.emit(event, data)
+	
+	} catch(err) {
+
+		console.log(err)
+		return false
+	}
+
+	return true
+}
