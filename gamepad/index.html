@@ -20,11 +20,18 @@
                 width: 800px;
                 height: 600px;
                 z-index: 1;
+                
+                pointer-events: none;
             }
 
             #hostId {
                 padding: 5px;
-                border: "2px grey solid"
+                border: "2px grey solid";
+                
+                display: block;
+                margin: 0 auto;
+
+                pointer-events: auto;
             }
 		</style>
         
@@ -32,16 +39,15 @@
 
     <body>
 
-        <!--<div id="ui">
+        <div id="ui">
 
-            <input name="hostId" type="text" id="hostId"/>
+            <input name="hostId" type="number" id="hostId" placeholder="Input host id and hit 'Enter'"/>
 
-        </div>-->
+        </div>
 
         <script src='/socket.io/socket.io.js'></script>
         
         <script src='./hexi/hexi.min.js'></script>
-        <script src='keybindings.js'></script>
         <script src='gamepad.js'></script>
 
     </body>

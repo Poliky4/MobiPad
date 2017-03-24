@@ -24,12 +24,15 @@ var socket = io()
 
 let hostId = '-'
 let hostText = {}
+let gamepadsText = {}
 
 let balls = [], bigBall, ball
 let speedX = 5,
     speedY = 5
 let size = 50
-let ballLifeTimeMS = 5000
+let ballLifeTimeMS = 10000
+
+let gamepads = []
 
 let world
 let camera
@@ -70,8 +73,14 @@ function setup(){
     g.arrowControl(bigBall, 5)
     bigBall.layer = 1
 
-    hostText.text = g.text('Host: ', '18px puzzler', 10, 10)
-    hostText.value = g.text('-', '18px puzzler', 10, hostText.text.y + hostText.text.width + 7)
+    hostText.text = g.text('Host id: ', '18px puzzler', 10, 20)
+    hostText.value = g.text('-', '18px puzzler', 0, 0)
+    hostText.text.putRight(hostText.value)
+    
+    gamepadsText.text = g.text('Gamepads: ', '18px puzzler', 0, 0)
+    hostText.text.putBottom(gamepadsText.text, 10)
+    gamepadsText.value = g.text('-', '18px puzzler', 0, 0)
+    gamepadsText.text.putRight(gamepadsText.value)
 
     socket.emit('makeConnection', 'host')
 
@@ -93,9 +102,17 @@ socket.on('hostId', (id) => {
     console.log('I am #' + id)
 })
 
-socket.on('gamepadConnected', (gamepad) => {
+socket.on('gamepadConnect', () => {
   
-    console.log('New gamepad: ', gamepad)
+    console.log('Gamepad connected!')
+    
+    gamepads.push({})
+})
+socket.on('gamepadDisconnect', () => {
+  
+    console.log('Gamepad disconnected!')
+    
+    gamepads.shift()
 })
 
 // Keybindings
@@ -158,6 +175,8 @@ socket.on('stick', (data)=>{
     
     //console.log('stick')
     //console.log(data)
+
+    console.log('stick')
 
     bigBall.vx = data.x * 0.2
     bigBall.vy = data.y * 0.2
@@ -281,5 +300,5 @@ function play() {
     bigBall.rotation = getRotation(bigBall)
 
     hostText.value.text = hostId
-    g.move(hostText)
+    gamepadsText.value.text = gamepads.length
 }

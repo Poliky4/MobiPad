@@ -14,77 +14,17 @@ var socket = io()
 
 // Global variables
 let stick, stickCenter, btnCenter, btnA, btnX, btnY, btnB
-let buttons
-let size = _WIDTH * 0.12 // 75
-let stickSize = _WIDTH * 0.35 // 250
-var stickJob
-
+let btnConnect
 let btnStart
 let buttonCenterPlaceholder
 
-let midline
+let size = _WIDTH * 0.12
+let stickSize = _WIDTH * 0.35
+let shadowColor = 'rgba(255, 255, 255, 0.7)'
 
 // -------------
     g.start()
 // -------------
-
-connectOnEnter()
-
-socket.on('gamepadConnected', (data) => {
-
-    console.log('Connected!')
-    console.log(data)
-})
-
-function setup(){
-
-    stick = g.circle(stickSize, 'grey', 'black', 0, 20, _HEIGHT/2 - stickSize/2)
-    // stickPlaceholder = g.circle(size/2, 'grey', 'black', 0, _WIDTH - size * 2, _HEIGHT / 2 - size / 4)
-    g.makeInteractive(stick)
-
-    buttons = g.group()
-
-    buttonCenter = g.circle(size/2, 'grey', 'black', 0, _WIDTH - size * 2, _HEIGHT / 2 - size / 4)
-    buttonCenterPlaceholder = g.circle(size/2, 'grey', 'black', 0, buttonCenter.x, buttonCenter.y)
-
-    btnA = makeButton(size, 'green', buttonCenter.x, buttonCenter.y, 'A')
-    btnX = makeButton(size, 'blue', buttonCenter.x, buttonCenter.y, 'X')
-    btnY = makeButton(size, 'yellow', buttonCenter.x, buttonCenter.y, 'Y')
-    btnB = makeButton(size, 'red', buttonCenter.x, buttonCenter.y, 'B')
-    
-    btnStart = makeStartButton()
-
-    //midline = g.rectangle(2, _HEIGHT, 'black', 0, 0, _WIDTH/2, 0)
-
-    socket.emit('makeConnection', 'client')
-    
-    g.state = play
-}
-
-
-
-function makeStartButton(){
-
-
-    let width = _WIDTH * 0.14,
-        height = _WIDTH * 0.07
-
-    btnStart = g.rectangle(width, height, 'darkgrey', 'black', 3, (_WIDTH/2) - (width/2), _HEIGHT - height)
-    btnStartText = g.text('START', '24px puzzler', 'black', btnStart.x, btnStart.y)
-    btnStart.putCenter(btnStartText)
-    g.makeInteractive(btnStart)
-    btnStart.tap = () => {
-
-        stick.draggable = !stick.draggable
-        buttonCenter.draggable = !buttonCenter.draggable
-        
-        if(g.hit(buttonCenter, buttonCenterPlaceholder))
-            buttonCenterPlaceholder.putCenter(buttonCenter)
-
-        socket.emit('start', hostId)
-    }
-
-}
 
 function load(){
 
@@ -97,12 +37,80 @@ function load(){
     g.loadingBar()
 }
 
-function makeButton(size, color, x, y, text){
+window.onkeyup = function(e){
+    if(e.keyCode == 13){ // enter
+        socket.emit('connectGamepad', e.target.value)
+    }
+}
 
-    let btn = g.circle(size, color, 'black', 0, x, y)
-    btn.text = g.text(text, '48px puzzler', 'black')
+socket.on('gamepadConnect', () => {
+
+    console.log('Connected!')
+
+    document.getElementById('hostId').style.visibility = "hidden"
+})
+
+function setup(){
+
+    stick = g.circle(stickSize, 'grey', 'black', 0, 20, _HEIGHT/2 - stickSize/2)
+    // stickPlaceholder = g.circle(size/2, 'grey', 'black', 0, _WIDTH - size * 2, _HEIGHT / 2 - size / 4)
+    g.makeInteractive(stick)
+
+    buttonCenter = g.circle(size/2, 'grey', 'black', 0, _WIDTH - size * 2, _HEIGHT / 2 - size / 4)
+    buttonCenterPlaceholder = g.circle(size/2, 'grey', 'black', 0, buttonCenter.x, buttonCenter.y)
+
+    btnA = makeButton(size, 'green', 0, 0, 0, 'A', 50)
+    btnX = makeButton(size, 'blue', 0, 0, 0, 'X', 50)
+    btnY = makeButton(size, 'yellow', 0, 0, 0, 'Y', 50)
+    btnB = makeButton(size, 'red', 0, 0, 0, 'B', 50)
+    
+    let startBtnSize = size/1.5
+    let offset = 10
+    btnStart = makeButton(startBtnSize, 'grey', 2, _WIDTH/2 + offset, _HEIGHT - startBtnSize, 'START', 18)
+    btnStart.tap = () => {
+
+        stick.draggable = !stick.draggable
+        buttonCenter.draggable = !buttonCenter.draggable
+        
+        if(g.hit(buttonCenter, buttonCenterPlaceholder))
+            buttonCenterPlaceholder.putCenter(buttonCenter)
+
+        socket.emit('start', hostId)
+    }
+
+    btnConnect = makeButton(startBtnSize, 'grey', 2, 0, 0, 'Connect', 16)
+    btnStart.putLeft(btnConnect, -offset)
+    btnConnect.tap = () => {
+        
+        let hostIdBox = document.getElementById('hostId')
+
+        if(hostIdBox.style.visibility != 'hidden')
+            socket.emit('connectGamepad', hostIdBox.value)
+        else
+            hostIdBox.style.visibility != 'visible'
+    }
+
+    socket.emit('makeConnection', 'client')
+    
+    g.state = play
+}
+
+function makeButton(size, color, lineWidth, x, y, text, textSize){
+
+    let btn = g.circle(size, color, 'black', lineWidth, x, y)
     btn.setPivot(0.5, 0.5)
     g.makeInteractive(btn)
+
+    if(!text)
+        return btn
+
+    let btnTextShadow = g.text(text, textSize + 'px puzzler', shadowColor)
+    btn.addChild(btnTextShadow)
+    btn.putCenter(btnTextShadow, 2, 2)
+    
+    let btnText = g.text(text, textSize + 'px puzzler', 'black')
+    btn.addChild(btnText)
+    btn.putCenter(btnText)
 
     btn.tap = () => {
         
@@ -123,13 +131,13 @@ function sendStick(){
 
 function checkStick(){
     if(stick.pressed){
-        if(!stickJob){
-            stickJob = setInterval(sendStick, 100)
+        if(!stick.stickJob){
+            stick.stickJob = setInterval(sendStick, 100)
         }        
     } else {
-        if(stickJob){
-            clearInterval(stickJob)
-            stickJob = undefined
+        if(stick.stickJob){
+            clearInterval(stick.stickJob)
+            stick.stickJob = undefined
             socket.emit('stick', {x:0, y:0})
         }
     }
@@ -137,18 +145,10 @@ function checkStick(){
 
 function moveButtons(){
 
-    let btnOffset = 0//size/4
-
-    buttonCenter.putBottom(btnA, 0, -btnOffset)
-    btnA.putCenter(btnA.text)
-    buttonCenter.putLeft(btnX, btnOffset)
-    btnX.putCenter(btnX.text)
-    buttonCenter.putTop(btnY, 0, btnOffset)
-    btnY.putCenter(btnY.text)
-    buttonCenter.putRight(btnB, -btnOffset)
-    btnB.putCenter(btnB.text)
-
-    //stick.putCenter(stickCenter)
+    buttonCenter.putBottom(btnA)
+    buttonCenter.putLeft(btnX)
+    buttonCenter.putTop(btnY)
+    buttonCenter.putRight(btnB)
 }
 
 function play() {

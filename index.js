@@ -8,24 +8,43 @@ var io = require('socket.io')(http)
 app.use('/', express.static('game'))
 app.use('/gamepad/', express.static('gamepad'))
 
+http.listen(PORT, function () {
+	console.log('MobiPad started on localhost:' + PORT + ' at: '+ new Date().toTimeString())
+})
+
 // globals
 let hosts = [],
 	clients = []
 
+// will probably be replaced by db auto id
 let hostIds = 0 
 
 io.on('connection', function(socket){
 
 	// Connection events
+	socket.on('disconnect', function(){
+			
+		console.log(socket.role, '#' + socket.id, 'disconnected')
 
-	let origin
-	socket.on('makeConnection', ($origin) =>{
+		if(socket.role == 'host'){
+			
+			hosts.splice(hosts.indexOf(socket), 1)
+		}
+		else if(socket.role == 'client'){
+			
+			clients.splice(hosts.indexOf(socket), 1)
 
-		origin = $origin
+			socket.emit('gamepadDisconnect')
+		}
+	})
 
-		console.log('New', origin, '#' + socket.id)
+	socket.on('makeConnection', (role) =>{
 
-		if	(origin == 'host') {
+		socket.role = role
+
+		console.log('New', socket.role, '#' + socket.id)
+
+		if	(socket.role == 'host') {
 
 			socket.hostId = hostIds++
 			socket.gamepads = []
@@ -34,7 +53,7 @@ io.on('connection', function(socket){
 
 			hosts.push(socket)
 		}
-		else if	(origin == 'client'){
+		else if	(socket.role == 'client'){
 			
 			clients.push(socket)
 		}
@@ -42,107 +61,94 @@ io.on('connection', function(socket){
 
 	socket.on('connectGamepad', (id) => {
 
-		console.log('Gamepad trying to connect')
+		let host = findHostById(id)
 
-		let connected = false
+		if(!host)
+			return
 
-		hosts.forEach(host => {
-			if(host.hostId == id){
+		host.gamepads.push(socket)
+		socket.host = host
 
-				console.log('host found!')
+		console.log('gamepad connected')
 
-				if(host.gamepads.length < 4){
+		host.emit('gamepadConnect')
+		socket.emit('gamepadConnect')
 
-					host.gamepads.push(socket)
-					socket.host = host
-
-					console.log('gamepad connected')
-
-					host.emit('gamepadConnected', {playerNumber:host.gamepads.length})
-					socket.emit('gamepadConnected', {playerNumber:host.gamepads.length})
-
-					connected = true
-				}
-			}
-		})		
-
-		socket.emit('gamepadConnected', connected)
 	})
+
 
 	// Gamepad events
 
 	socket.on('stick', (data)=>{
 
-		console.log('stick')
-		socket.host.emit('stick', data)
+		sendToHost(socket, 'stick', data)
 	})
 	socket.on('A', ()=>{
 
-		socket.gamepads.forEach(gamepad=> {
-			host.emit('A')
-		})
+		sendToHost(socket, 'A')
 	})
 	socket.on('X', ()=>{
 
-		socket.gamepads.forEach(gamepad=> {
-			host.emit('X')
-		})
+		sendToHost(socket, 'X')
 	})
 	socket.on('Y', ()=>{
 
-		socket.gamepads.forEach(gamepad=> {
-			host.emit('Y')
-		})
+		sendToHost(socket, 'Y')
 	})
 	socket.on('B', ()=>{
 
-		socket.gamepads.forEach(gamepad=> {
-			host.emit('B')
-		})
+		sendToHost(socket, 'B')
 	})
 	socket.on('start', ()=>{
 
-		socket.gamepads.forEach(gamepad=> {
-			host.emit('start')
-		})
+		sendToHost(socket, 'start')
 	})
 
 	// Gamepad events
-
-	socket.on('disconnect', function(){
-			
-		console.log(origin, '#' + socket.id, 'disconnected')
-		if(origin == 'host'){
-			hosts.splice(hosts.indexOf(socket), 1)
-		}
-		else if(origin == 'client'){
-			clients.splice(hosts.indexOf(socket), 1)
-		}
-	})
 })
 
 
-http.listen(PORT, function () {
-	console.log('MobiPad started on localhost:' + PORT + ' at: '+ new Date().toTimeString())
-})
+function findHostById(id){
+	for(let i in hosts){
+		let host = hosts[i]
+		if(host.hostId == id) {
+		
+			return host
+		}
+	}
 
-function sendToGamepads(host, event, data){
-	host.gamepads.forEach(gamepad => {
-		gamepad.emit(event, data)
-	})
+	return undefined		
 }
 
-function sendToHost(host, event, data){
-	
-	try{
+function sendToGamepads(socket, event, data){
 		
-		host.emit(event, data)
+	try{
 	
+		socket.host.gamepads.forEach(gamepad => {
+			gamepad.emit(event, data)
+		})
 	} catch(err) {
 
-		console.log(err)
+		// console.log(err)
+		console.log('Error sending to gamepads')
 		return false
 	}
 
 	return true
+}
+
+function sendToHost(socket, event, data){
+	try{
+		
+		socket.host.emit(event, data)
+	
+	} catch(err) {
+
+		// console.log(err)
+		console.log('Error sending to host')
+		return false
+	}
+
+	return true
+	
 }
