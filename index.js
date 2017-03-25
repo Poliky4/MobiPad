@@ -32,9 +32,9 @@ io.on('connection', function(socket){
 		}
 		else if(socket.role == 'client'){
 			
-			clients.splice(hosts.indexOf(socket), 1)
+			clients.splice(clients.indexOf(socket), 1)
 
-			socket.emit('gamepadDisconnect')
+			sendToHost(socket, 'gamepadDisconnect')
 		}
 	})
 
