@@ -20,6 +20,46 @@ window.addEventListener("resize", function(event){
 
 var socket = io()
 
+var servers = {
+    'ice-servers': [
+        {url:'stun.l.google.com:19302'}
+    ]
+}
+
+var rtc = new RTCPeerConnection(servers)
+
+rtc.onicecandidate = event => {
+    onIceCandidate(rtc, event)
+}
+
+let sdpConstraints = {}
+
+rtc.createOffer(getOfferSDP, onfail, sdpConstraints)
+
+function getOfferSDP(offerSDP){
+    
+    rtc.setLocalDescription(offerSDP, onsuccess, onfail)
+
+    console.log('sdp: ', offerSDP.sdp)
+    console.log('type: ', offerSDP.type)
+}
+
+/* 
+https://codelabs.developers.google.com/codelabs/webrtc-web/#4
+https://www.webrtc-experiment.com/docs/WebRTC-PeerConnection.html
+https://shanetully.com/2014/09/a-dead-simple-webrtc-example/
+
+*/
+
+function onsuccess(stuff){
+
+    console.log('som success?: ', stuff)
+}
+function onfail(stuff){
+
+    console.log('som fail?: ', stuff)
+}
+
 // globals
 
 let hostId = '-'
