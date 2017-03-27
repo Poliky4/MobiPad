@@ -19,46 +19,46 @@ window.addEventListener("resize", function(event){
 })
 
 var socket = io()
+var rtc = communications.getRTC(false)
 
-var servers = {
-    'ice-servers': [
-        {url:'stun.l.google.com:19302'}
-    ]
-}
+socket.on('hostId', (id) => {
+  
+    hostId = id
+    console.log('I am #' + id)
+})
 
-var rtc = new RTCPeerConnection(servers)
+socket.on('gamepadConnect', (gamepad) => {
+  
+    console.log('Gamepad connected!')
+    console.log(gamepad)
 
-rtc.onicecandidate = event => {
-    onIceCandidate(rtc, event)
-}
+    // rtc.addIceCandidate( new RTCIceCandidate(gamepad) )
+    rtc.setRemoteDescription( new RTCSessionDescription(gamepad) )
 
-let sdpConstraints = {}
+    rtc.createAnswer( sdp => {
 
-rtc.createOffer(getOfferSDP, onfail, sdpConstraints)
+        rtc.setLocalDescription(sdp)
+        socket.emit('answer', sdp)
 
-function getOfferSDP(offerSDP){
+    }, error => {
+        console.log('send answer error', error)
+    }, {'mandatory': {
+                'OfferToReceiveAudio': false,
+                'OfferToReceiveVideo': false
+            }
+    })
+
+    gamepads.push({})
+})
+socket.on('gamepadDisconnect', () => {
+  
+    console.log('Gamepad disconnected!')
     
-    rtc.setLocalDescription(offerSDP, onsuccess, onfail)
+    gamepads.shift()
+})
 
-    console.log('sdp: ', offerSDP.sdp)
-    console.log('type: ', offerSDP.type)
-}
 
-/* 
-https://codelabs.developers.google.com/codelabs/webrtc-web/#4
-https://www.webrtc-experiment.com/docs/WebRTC-PeerConnection.html
-https://shanetully.com/2014/09/a-dead-simple-webrtc-example/
-
-*/
-
-function onsuccess(stuff){
-
-    console.log('som success?: ', stuff)
-}
-function onfail(stuff){
-
-    console.log('som fail?: ', stuff)
-}
+console.log('rtc: ', rtc)
 
 // globals
 
@@ -129,32 +129,12 @@ function setup(){
 
     camera = g.worldCamera(g.stage, gameWidth, gameHeight)//, g.canvas)
     // camera = g.worldCamera(bigBall, gameWidth, gameHeight, g.canvas)
-    // camera.centerOver(bigBall)
+    camera.centerOver(bigBall)
 
     g.state = play
 }
 
 // -------------
-
-socket.on('hostId', (id) => {
-  
-    hostId = id
-    console.log('I am #' + id)
-})
-
-socket.on('gamepadConnect', () => {
-  
-    console.log('Gamepad connected!')
-    
-    gamepads.push({})
-})
-socket.on('gamepadDisconnect', () => {
-  
-    console.log('Gamepad disconnected!')
-    
-    gamepads.shift()
-})
-
 // Keybindings
 
 keySpace.press = () => {

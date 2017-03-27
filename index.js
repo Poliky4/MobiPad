@@ -38,6 +38,11 @@ io.on('connection', function(socket){
 		}
 	})
 
+	socket.on('offer', description => {
+		console.log('New webRTC offer!!!!')
+		socket.offerDescription = description
+	})
+
 	socket.on('makeConnection', (role) =>{
 
 		socket.role = role
@@ -59,7 +64,11 @@ io.on('connection', function(socket){
 		}
 	})
 
-	socket.on('connectGamepad', (id) => {
+	socket.on('answer', sdp => {
+		sendToGamepads(socket, 'answer', sdp)
+	})
+
+	socket.on('connectGamepad', (id, spd) => {
 
 		let host = findHostById(id)
 
@@ -68,10 +77,14 @@ io.on('connection', function(socket){
 
 		host.gamepads.push(socket)
 		socket.host = host
+		socket.spd = spd
 
-		console.log('gamepad connected')
+		console.log('gamepad connecting')
+		console.log('spd')
+		console.log(spd)
+		console.log('spd')
 
-		host.emit('gamepadConnect')
+		host.emit('gamepadConnect', spd)
 		socket.emit('gamepadConnect')
 
 	})

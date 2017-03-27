@@ -11,6 +11,12 @@ g.backgroundColor = '#a0a0a0'
 g.fps = _FPS
 
 var socket = io()
+var rtc = communications.getRTC(true)
+
+console.log('rtc')
+console.log(rtc)
+console.log('rtc')
+
 
 // Global variables
 let stick, stickCenter, btnCenter, btnA, btnX, btnY, btnB
@@ -37,11 +43,13 @@ function load(){
     g.loadingBar()
 }
 
-window.onkeyup = function(e){
-    if(e.keyCode == 13){ // enter
-        socket.emit('connectGamepad', e.target.value)
-    }
-}
+socket.on('answer', sdp => {
+    
+    console.log('Answer!')
+    console.log(sdp)
+
+    rtc.setRemoteDescription(new RTCSessionDescription(sdp))
+})
 
 socket.on('gamepadConnect', () => {
 
@@ -60,13 +68,20 @@ function setup(){
     buttonCenterPlaceholder = g.circle(size/2, 'grey', 'black', 0, buttonCenter.x, buttonCenter.y)
 
     btnA = makeButton(size, 'green', 0, 0, 0, 'A', 50)
+    buttonCenter.addChild(btnA)
+    buttonCenter.putBottom(btnA)
     btnX = makeButton(size, 'blue', 0, 0, 0, 'X', 50)
+    buttonCenter.addChild(btnX)
+    buttonCenter.putLeft(btnX)
     btnY = makeButton(size, 'yellow', 0, 0, 0, 'Y', 50)
+    buttonCenter.addChild(btnY)
+    buttonCenter.putTop(btnY)
     btnB = makeButton(size, 'red', 0, 0, 0, 'B', 50)
+    buttonCenter.addChild(btnB)
+    buttonCenter.putRight(btnB)
     
     let startBtnSize = size/1.5
-    let offset = 10
-    btnStart = makeButton(startBtnSize, 'grey', 2, _WIDTH/2 + offset, _HEIGHT - startBtnSize, 'START', 18)
+    btnStart = makeButton(startBtnSize, 'grey', 2, _WIDTH/2 - startBtnSize, _HEIGHT - startBtnSize - 30, ' Move\nButtons', 16)
     btnStart.tap = () => {
 
         stick.draggable = !stick.draggable
@@ -75,19 +90,19 @@ function setup(){
         if(g.hit(buttonCenter, buttonCenterPlaceholder))
             buttonCenterPlaceholder.putCenter(buttonCenter)
 
-        socket.emit('start', hostId)
+        //socket.emit('start', hostId)
     }
 
     btnConnect = makeButton(startBtnSize, 'grey', 2, 0, 0, 'Connect', 16)
-    btnStart.putLeft(btnConnect, -offset)
+    btnStart.putRight(btnConnect)
     btnConnect.tap = () => {
         
         let hostIdBox = document.getElementById('hostId')
 
         if(hostIdBox.style.visibility != 'hidden')
-            socket.emit('connectGamepad', hostIdBox.value)
+            socket.emit('connectGamepad', hostIdBox.value, rtc.localDescription)
         else
-            hostIdBox.style.visibility != 'visible'
+            hostIdBox.style.visibility = 'visible'
     }
 
     socket.emit('makeConnection', 'client')
@@ -139,22 +154,14 @@ function checkStick(){
             clearInterval(stick.stickJob)
             stick.stickJob = undefined
             socket.emit('stick', {x:0, y:0})
+            rtc.dataChannel.send([{'hm':'huh'}])
         }
     }
 }
 
-function moveButtons(){
-
-    buttonCenter.putBottom(btnA)
-    buttonCenter.putLeft(btnX)
-    buttonCenter.putTop(btnY)
-    buttonCenter.putRight(btnB)
-}
 
 function play() {
 
     checkStick()
-
-    moveButtons()
 
 }
