@@ -119,3 +119,9 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/archlinuxpackages,linux,windows,node,code
+
+# Custom
+
+# vim swap file
+*.swp
+*.swo
