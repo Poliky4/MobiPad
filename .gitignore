@@ -122,6 +122,10 @@ $RECYCLE.BIN/
 
 # Custom
 
+# npm package lock
+package-lock.json
+
 # vim swap file
 *.swp
 *.swo
+
