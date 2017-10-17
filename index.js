@@ -8,103 +8,14 @@ var io = require('socket.io')(http)
 app.use('/', express.static('game'))
 app.use('/gamepad/', express.static('gamepad'))
 
-// globals
-let hosts = [],
-	clients = []
+io.on('connection', function (socket) {
+  console.log('Socket connected')
 
-io.on('connection', function(socket){
-
-	let origin
-	
-	console.log('Socket connected \t#' + socket.id)
-
-	socket.on('makeConnection', ($origin) =>{
-
-		origin = $origin
-
-		if	(origin == 'host') 		hosts.push(socket)
-		if	(origin == 'client')	clients.push(socket)
-
-		console.log('hosts: ' + hosts.length)
-		console.log('clients: ' + clients.length)
-	})
-
-	socket.on('sync', (indata) => {
-		let data = indata
-		console.log('sync: ', data)
-
-		hosts.forEach(host=> {
-			host.emit('sync', data)
-		})
-
-	})
-
-	// socket.on('clientSync', data => {
-
-	// 	// will be *your* host and not all
-	// 	hosts.forEach(host=> {
-	// 		host.emit('stick', data)
-	// 	})
-	// })
-
-	socket.on('hitBall', (ball) => {
-
-		console.log(ball)
-	})
-
-	socket.on('stick', (data)=>{
-
-		hosts.forEach(host=> {
-			host.emit('stick', data)
-		})
-	})
-	socket.on('A', ()=>{
-
-		hosts.forEach(host=> {
-			host.emit('A')
-		})
-	})
-	socket.on('X', ()=>{
-
-		hosts.forEach(host=> {
-			host.emit('X')
-		})
-	})
-	socket.on('Y', ()=>{
-
-		hosts.forEach(host=> {
-			host.emit('Y')
-		})
-	})
-	socket.on('B', ()=>{
-
-		hosts.forEach(host=> {
-			host.emit('B')
-		})
-	})
-	socket.on('start', ()=>{
-
-		hosts.forEach(host=> {
-			host.emit('start')
-		})
-	})
-
-	socket.on('disconnect', function(){
-			
-		console.log('Socket disconnected \t#' + socket.id)
-		if(origin == 'host'){
-			hosts.splice(hosts.indexOf(socket), 1)
-		}
-		else if(origin == 'client'){
-			clients.splice(hosts.indexOf(socket), 1)
-		}
-
-		console.log('hosts: ' + hosts.length)
-		console.log('clients: ' + clients.length)
-	})
+  socket.on('disconnect', function () {
+    console.log('Socket disconnected')
+  })
 })
 
-
 http.listen(PORT, function () {
-	console.log('MobiPad started on localhost:' + PORT + ' at: '+ new Date().toTimeString())
+  console.log('MobiPad started on localhost:' + PORT + ' at: ' + new Date().toTimeString())
 })
